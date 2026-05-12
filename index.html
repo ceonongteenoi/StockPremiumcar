@@ -1880,6 +1880,7 @@ body:has(#mainApp[style*="display: block"]) #roleSelector {
         .admin-option:hover { border-color: #c9a84c; }
         .sales-option:hover { border-color: #5ab87a; }
         .customer-option:hover { border-color: #4a90d9; }
+        .member-option:hover { border-color: #10b981; }
         .role-option.selected { border-color: var(--gold); box-shadow: 0 0 0 4px rgba(201,168,76,0.2); }
         .role-icon { font-size: 56px; margin-bottom: 14px; display: block; }
         .role-option h3 { font-family: var(--font-heading); font-size: 20px; margin-bottom: 8px; }
@@ -1888,6 +1889,7 @@ body:has(#mainApp[style*="display: block"]) #roleSelector {
         .badge-admin { background: linear-gradient(135deg,#c9a84c,#e0a800); color: #000; }
         .badge-sales { background: linear-gradient(135deg,#5ab87a,#3d8b5f); color: #fff; }
         .badge-customer { background: linear-gradient(135deg,#4a90d9,#764ba2); color: #fff; }
+        .badge-member { background: linear-gradient(135deg,#10b981,#059669); color: #fff; }
         .btn-next { display: block; width: 100%; padding: 14px; background: linear-gradient(135deg,#c9a84c,#e0a800); color: #000; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: var(--transition); margin-top: 20px; font-family: var(--font-body); }
         .btn-next:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 12px 35px rgba(201,168,76,.4); }
         .btn-next:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -2163,6 +2165,12 @@ body:has(.customer-portal.active) #roleSelector {
             <button id="btn-next" class="btn-next" disabled onclick="APP.goToNext()">ถัดไป →</button>
             <div style="text-align:center;margin-top:16px">
                 <small style="color:var(--text-secondary)">v13.2 Enhanced Edition | 🏦 พร้อมระบบไฟแนนซ์ | 📋 ใบเสนอราคา | 👥 CRM | ✏️ Enhanced Edit</small>
+                <div class="role-option member-option" onclick="APP.selectRole('member')" id="card-member">
+    <span class="role-icon">🙋</span>
+    <h3>สมาชิก</h3>
+    <p>สมัครฟรี • สะสมแต้ม • บันทึกรถที่ชอบ • รับสิทธิพิเศษ</p>
+    <span class="role-badge badge-member">Member</span>
+</div>
             </div>
         </div>
     </div>
@@ -3074,20 +3082,28 @@ function loadFromLocalStorage() {
 
             // ========== ROLE SELECTION ==========
             function selectRole(role) {
-                currentRole = role;
-                document.querySelectorAll('.role-option').forEach(c => c.classList.remove('selected'));
-                const cardMap = { 'admin': 'card-admin', 'sales': 'card-sales', 'customer': 'card-customer' };
-                const selectedCard = document.getElementById(cardMap[role]);
-                if (selectedCard) selectedCard.classList.add('selected');
-                document.getElementById('btn-next').disabled = false;
-                document.getElementById('btn-next').onclick = () => {
-                    if (role === 'customer') { customerPortal(); } else { loginScreen(role); }
-                };
-            }
+    currentRole = role;
+    document.querySelectorAll('.role-option').forEach(c => c.classList.remove('selected'));
+    const cardMap = { 
+        'admin': 'card-admin', 
+        'sales': 'card-sales', 
+        'customer': 'card-customer',
+        'member': 'card-member'  // ✅ เพิ่ม
+    };
+    const selectedCard = document.getElementById(cardMap[role]);
+    if (selectedCard) selectedCard.classList.add('selected');
+    document.getElementById('btn-next').disabled = false;
+}
 
             function goToNext() {
-                if (currentRole === 'customer') { customerPortal(); } else if (currentRole) { loginScreen(currentRole); }
-            }
+    if (currentRole === 'customer') { 
+        customerPortal(); 
+    } else if (currentRole === 'member') {  // ✅ เพิ่ม
+        loginScreen('member');
+    } else if (currentRole) { 
+        loginScreen(currentRole); 
+    }
+}
 
             function customerPortal() {
     currentRole = 'customer';
@@ -3203,21 +3219,26 @@ function loginScreen(role) {
         document.getElementById('loginTitle').textContent = 'เข้าสู่ระบบ Admin';
         document.getElementById('loginBtn').className = 'login-btn';
         document.getElementById('loginBtn').setAttribute('onclick', 'APP.handleLogin()');
+        document.getElementById('loginUser').placeholder = 'username';
+        document.getElementById('loginPass').placeholder = 'password';
         document.getElementById('demoInfo').innerHTML = '🔑 กรุณากรอก username และ password';
     } else if (role === 'sales') {
         document.getElementById('loginIcon').textContent = '💼';
         document.getElementById('loginTitle').textContent = 'เข้าสู่ระบบ Sales';
         document.getElementById('loginBtn').className = 'login-btn sales-btn';
         document.getElementById('loginBtn').setAttribute('onclick', 'APP.handleLogin()');
+        document.getElementById('loginUser').placeholder = 'username';
+        document.getElementById('loginPass').placeholder = 'password';
         document.getElementById('demoInfo').innerHTML = '<strong>🔑 ทดลอง:</strong> somchai / 1234';
     } else if (role === 'member') {
+        // ✅ โหมดสมาชิก - ใช้อีเมลและรหัสผ่าน
         document.getElementById('loginIcon').textContent = '🙋';
         document.getElementById('loginTitle').textContent = 'เข้าสู่ระบบสมาชิก';
         document.getElementById('loginBtn').className = 'login-btn';
         document.getElementById('loginBtn').setAttribute('onclick', 'APP.handleMemberLogin()');
         document.getElementById('loginUser').placeholder = 'อีเมล';
         document.getElementById('loginPass').placeholder = 'รหัสผ่าน';
-        document.getElementById('demoInfo').innerHTML = 'ยังไม่มีบัญชี? <a href="#" onclick="APP.showRegisterScreen()" style="color:var(--gold)">สมัครสมาชิก</a>';
+        document.getElementById('demoInfo').innerHTML = 'ยังไม่มีบัญชี? <a href="#" onclick="APP.showRegisterScreen()" style="color:var(--gold);font-weight:700">📝 สมัครสมาชิก</a>';
     }
 }
 function saveUsers() {
