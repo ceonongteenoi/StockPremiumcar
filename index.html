@@ -2188,10 +2188,69 @@ body:has(.customer-portal.active) #roleSelector {
             </div>
             <button class="login-btn" id="loginBtn" onclick="APP.handleLogin()">🚀 เข้าสู่ระบบ</button>
             <button class="back-btn" onclick="APP.goBack()">↩️ กลับไปเลือกบทบาท</button>
+            <div style="text-align:center;margin-top:12px">
+    <button class="back-btn" onclick="APP.showRegisterScreen()" style="color:var(--gold);font-weight:700">
+        📝 ยังไม่มีบัญชี? สมัครสมาชิก
+    </button>
+</div>
             <div style="margin-top:18px;padding:14px;background:var(--bg-input);border-radius:12px;font-size:11px;color:var(--text-secondary);text-align:center;line-height:2" id="demoInfo"></div>
         </div>
     </div>
-
+    
+    <!-- Register Screen -->
+<div id="registerScreen" class="login-container" style="display:none">
+    <div class="login-card">
+        <div class="login-logo">
+            <div class="logo-icon">📝</div>
+            <h1>สมัครสมาชิก</h1>
+            <p style="font-size:12px;color:var(--text-secondary);margin-top:8px">สมัครฟรี! สะสมแต้ม รับสิทธิพิเศษ</p>
+        </div>
+        <div class="login-error" id="registerError">⚠️ ข้อมูลไม่ถูกต้อง</div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">👤 ชื่อ</label>
+                <input type="text" class="form-input" id="regFirstName" placeholder="ชื่อ" autocomplete="given-name">
+            </div>
+            <div class="form-group">
+                <label class="form-label">👤 นามสกุล</label>
+                <input type="text" class="form-input" id="regLastName" placeholder="นามสกุล" autocomplete="family-name">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">📧 อีเมล</label>
+            <input type="email" class="form-input" id="regEmail" placeholder="example@email.com" autocomplete="email">
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">📞 เบอร์โทร</label>
+            <input type="tel" class="form-input" id="regTel" placeholder="08x-xxx-xxxx" autocomplete="tel">
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">🔒 รหัสผ่าน</label>
+            <div style="display:flex">
+                <input type="password" class="form-input" id="regPass" placeholder="อย่างน้อย 6 ตัว" autocomplete="new-password" style="border-radius:10px 0 0 10px;border-right:none">
+                <span class="password-toggle" onclick="APP.toggleRegPassword()" style="cursor:pointer" title="แสดง/ซ่อนรหัสผ่าน">👁️</span>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">🔒 ยืนยันรหัสผ่าน</label>
+            <input type="password" class="form-input" id="regPassConfirm" placeholder="ยืนยันรหัสผ่านอีกครั้ง" autocomplete="new-password">
+        </div>
+        
+        <div class="form-group" style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-secondary)">
+            <input type="checkbox" id="regAgree">
+            <span>ฉันยอมรับ <a href="#" onclick="event.preventDefault();APP.showTerms()" style="color:var(--gold)">ข้อตกลงและเงื่อนไข</a></span>
+        </div>
+        
+        <button class="login-btn" id="registerBtn" onclick="APP.handleRegister()">📝 สมัครสมาชิก</button>
+        
+        <button class="back-btn" onclick="APP.showLoginScreen()">↩️ มีบัญชีอยู่แล้ว? เข้าสู่ระบบ</button>
+    </div>
+</div>
     <!-- Customer Portal -->
     <div id="customerPortal" class="customer-portal">
         <div class="customer-header">
@@ -3048,24 +3107,7 @@ function loadFromLocalStorage() {
     showToast(__('customer_access'), 'info');
 }
 
-            function loginScreen(role) {
-                document.getElementById('roleSelector').style.display = 'none';
-                document.getElementById('loginScreen').classList.add('active');
-                document.getElementById('loginError').classList.remove('show');
-                document.getElementById('loginUser').value = '';
-                document.getElementById('loginPass').value = '';
-                if (role === 'admin') {
-    document.getElementById('loginIcon').textContent = '👑';
-    document.getElementById('loginTitle').textContent = 'เข้าสู่ระบบ Admin';
-    document.getElementById('loginBtn').className = 'login-btn';
-    document.getElementById('demoInfo').innerHTML = '🔑 กรุณากรอก username และ password';
-} else {
-    document.getElementById('loginIcon').textContent = '💼';
-    document.getElementById('loginTitle').textContent = 'เข้าสู่ระบบ Sales';
-    document.getElementById('loginBtn').className = 'login-btn sales-btn';
-    document.getElementById('demoInfo').innerHTML = '<strong>🔑 ทดลอง:</strong> somchai / 1234';
-}
-            }
+            
 
             function goBack() {
     currentRole = null;
@@ -3149,7 +3191,35 @@ function openUserManagement() {
     
     document.getElementById('modalContainer').insertAdjacentHTML('beforeend', html);
 }
-
+function loginScreen(role) {
+    document.getElementById('roleSelector').style.display = 'none';
+    document.getElementById('loginScreen').classList.add('active');
+    document.getElementById('loginError').classList.remove('show');
+    document.getElementById('loginUser').value = '';
+    document.getElementById('loginPass').value = '';
+    
+    if (role === 'admin') {
+        document.getElementById('loginIcon').textContent = '👑';
+        document.getElementById('loginTitle').textContent = 'เข้าสู่ระบบ Admin';
+        document.getElementById('loginBtn').className = 'login-btn';
+        document.getElementById('loginBtn').setAttribute('onclick', 'APP.handleLogin()');
+        document.getElementById('demoInfo').innerHTML = '🔑 กรุณากรอก username และ password';
+    } else if (role === 'sales') {
+        document.getElementById('loginIcon').textContent = '💼';
+        document.getElementById('loginTitle').textContent = 'เข้าสู่ระบบ Sales';
+        document.getElementById('loginBtn').className = 'login-btn sales-btn';
+        document.getElementById('loginBtn').setAttribute('onclick', 'APP.handleLogin()');
+        document.getElementById('demoInfo').innerHTML = '<strong>🔑 ทดลอง:</strong> somchai / 1234';
+    } else if (role === 'member') {
+        document.getElementById('loginIcon').textContent = '🙋';
+        document.getElementById('loginTitle').textContent = 'เข้าสู่ระบบสมาชิก';
+        document.getElementById('loginBtn').className = 'login-btn';
+        document.getElementById('loginBtn').setAttribute('onclick', 'APP.handleMemberLogin()');
+        document.getElementById('loginUser').placeholder = 'อีเมล';
+        document.getElementById('loginPass').placeholder = 'รหัสผ่าน';
+        document.getElementById('demoInfo').innerHTML = 'ยังไม่มีบัญชี? <a href="#" onclick="APP.showRegisterScreen()" style="color:var(--gold)">สมัครสมาชิก</a>';
+    }
+}
 function saveUsers() {
     Object.keys(USERS).forEach(id => {
         const nameEl = document.getElementById('uname_' + id);
@@ -3206,16 +3276,25 @@ function deleteUser(userId) {
             }
 
             function updateUserUI() {
-                if (!currentUser) return;
-                document.getElementById('userAvatar').textContent = currentUser.avatar;
-                document.getElementById('userAvatar').className = 'user-avatar' + (currentUser.role === 'sales' ? ' sales' : '');
-                document.getElementById('userNameDisp').textContent = currentUser.name;
-                document.getElementById('userRoleDisp').textContent = currentUser.role === 'admin' ? 'ADMIN' : 'SALES';
-                const at = document.getElementById('adminTab'), ab = document.getElementById('adminBadge');
-                if (currentUser.role === 'admin') { if (at) at.style.display = 'inline-block'; if (ab) ab.style.display = 'inline-block'; } else { if (at) at.style.display = 'none'; if (ab) ab.style.display = 'none'; }
-                document.querySelectorAll('.admin-only').forEach(el => el.style.display = currentUser.role === 'admin' ? '' : 'none');
-                document.getElementById('customerBadgeTop').style.display = 'none';
-            }
+    if (!currentUser) return;
+    document.getElementById('userAvatar').textContent = currentUser.avatar || '🙋';
+    document.getElementById('userAvatar').className = 'user-avatar' + (currentUser.role === 'sales' ? ' sales' : '');
+    document.getElementById('userNameDisp').textContent = currentUser.firstName || currentUser.name;
+    document.getElementById('userRoleDisp').textContent = currentUser.role === 'admin' ? 'ADMIN' : 
+                                                         currentUser.role === 'member' ? 'MEMBER' : 'SALES';
+    
+    // ถ้าเป็น member ให้เปิด profile เมื่อคลิก
+    const userBadge = document.querySelector('.user-badge');
+    if (userBadge && currentUser.role === 'member') {
+        userBadge.setAttribute('onclick', 'APP.openMemberProfile()');
+    }
+    
+    const at = document.getElementById('adminTab'), ab = document.getElementById('adminBadge');
+    if (currentUser.role === 'admin') { if (at) at.style.display = 'inline-block'; if (ab) ab.style.display = 'inline-block'; } 
+    else { if (at) at.style.display = 'none'; if (ab) ab.style.display = 'none'; }
+    document.querySelectorAll('.admin-only').forEach(el => el.style.display = currentUser.role === 'admin' ? '' : 'none');
+    document.getElementById('customerBadgeTop').style.display = 'none';
+}
 
             // ========== INIT APP ==========
             function initApp() {
@@ -6085,6 +6164,286 @@ setTimeout(() => {
     }
 }, 3000);
 
+// ========== MEMBER SYSTEM ==========
+let members = {};
+let memberFavorites = {};
+let memberSearchHistory = {};
+let memberPoints = {};
+
+// โหลดข้อมูลสมาชิก
+function loadMembers() {
+    try { members = JSON.parse(localStorage.getItem('sc13_members') || '{}'); } catch(e) { members = {}; }
+    try { memberFavorites = JSON.parse(localStorage.getItem('sc13_memberFav') || '{}'); } catch(e) { memberFavorites = {}; }
+    try { memberSearchHistory = JSON.parse(localStorage.getItem('sc13_memberSearch') || '{}'); } catch(e) { memberSearchHistory = {}; }
+    try { memberPoints = JSON.parse(localStorage.getItem('sc13_memberPoints') || '{}'); } catch(e) { memberPoints = {}; }
+}
+
+function saveMembers() {
+    localStorage.setItem('sc13_members', JSON.stringify(members));
+    localStorage.setItem('sc13_memberFav', JSON.stringify(memberFavorites));
+    localStorage.setItem('sc13_memberSearch', JSON.stringify(memberSearchHistory));
+    localStorage.setItem('sc13_memberPoints', JSON.stringify(memberPoints));
+}
+
+// แสดงหน้าสมัครสมาชิก
+function showRegisterScreen() {
+    document.getElementById('roleSelector').style.display = 'none';
+    document.getElementById('loginScreen').classList.remove('active');
+    document.getElementById('registerScreen').style.display = 'flex';
+    document.getElementById('registerError').classList.remove('show');
+}
+
+// แสดงหน้าล็อกอิน
+function showLoginScreen() {
+    document.getElementById('registerScreen').style.display = 'none';
+    document.getElementById('roleSelector').style.display = 'none';
+    document.getElementById('loginScreen').classList.add('active');
+}
+
+// Toggle password สำหรับ register
+function toggleRegPassword() {
+    const input = document.getElementById('regPass');
+    if (input) input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+// สมัครสมาชิก
+function handleRegister() {
+    const firstName = document.getElementById('regFirstName')?.value?.trim();
+    const lastName = document.getElementById('regLastName')?.value?.trim();
+    const email = document.getElementById('regEmail')?.value?.trim();
+    const tel = document.getElementById('regTel')?.value?.trim();
+    const pass = document.getElementById('regPass')?.value;
+    const passConfirm = document.getElementById('regPassConfirm')?.value;
+    const agreed = document.getElementById('regAgree')?.checked;
+    
+    // Validation
+    if (!firstName || !email || !pass) {
+        showRegisterError('⚠️ กรุณากรอกข้อมูลที่จำเป็น (ชื่อ, อีเมล, รหัสผ่าน)');
+        return;
+    }
+    
+    if (!isValidEmail(email)) {
+        showRegisterError('⚠️ รูปแบบอีเมลไม่ถูกต้อง');
+        return;
+    }
+    
+    if (!isValidPhone(tel) && tel) {
+        showRegisterError('⚠️ รูปแบบเบอร์โทรไม่ถูกต้อง (08x-xxx-xxxx)');
+        return;
+    }
+    
+    if (pass.length < 6) {
+        showRegisterError('⚠️ รหัสผ่านต้องอย่างน้อย 6 ตัวอักษร');
+        return;
+    }
+    
+    if (pass !== passConfirm) {
+        showRegisterError('⚠️ รหัสผ่านไม่ตรงกัน');
+        return;
+    }
+    
+    if (!agreed) {
+        showRegisterError('⚠️ กรุณายอมรับข้อตกลงและเงื่อนไข');
+        return;
+    }
+    
+    // เช็คอีเมลซ้ำ
+    loadMembers();
+    const exists = Object.values(members).find(m => m.email === email);
+    if (exists) {
+        showRegisterError('⚠️ อีเมลนี้มีผู้ใช้แล้ว');
+        return;
+    }
+    
+    // สร้างสมาชิกใหม่
+    const memberId = 'mem_' + Date.now().toString(36);
+    const member = {
+        id: memberId,
+        firstName: firstName,
+        lastName: lastName || '',
+        email: email,
+        tel: tel || '',
+        password: pass, // ใน production ควร hash
+        avatar: '🙋',
+        role: 'member',
+        createdAt: new Date().toISOString(),
+        lastLogin: new Date().toISOString(),
+        loginCount: 0,
+        status: 'active'
+    };
+    
+    members[memberId] = member;
+    memberPoints[memberId] = 100; // แต้มเริ่มต้น
+    saveMembers();
+    
+    // ล็อกอินอัตโนมัติ
+    currentUser = member;
+    currentRole = 'member';
+    isLoggedIn = true;
+    
+    localStorage.setItem('sc13_session', JSON.stringify({
+        username: email,
+        memberId: memberId,
+        loginTime: new Date().toISOString(),
+        role: 'member'
+    }));
+    
+    document.getElementById('registerScreen').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    updateUserUI();
+    initApp();
+    
+    showToast('✅ ยินดีต้อนรับคุณ ' + firstName + '! 🎉 รับ 100 แต้ม', 'success');
+}
+
+// Member Login
+function handleMemberLogin() {
+    const email = document.getElementById('loginUser')?.value?.trim();
+    const pass = document.getElementById('loginPass')?.value?.trim();
+    
+    if (!email || !pass) {
+        document.getElementById('loginError').textContent = '⚠️ กรุณากรอกอีเมลและรหัสผ่าน';
+        document.getElementById('loginError').classList.add('show');
+        return;
+    }
+    
+    loadMembers();
+    const member = Object.values(members).find(m => m.email === email && m.password === pass);
+    
+    if (member) {
+        currentUser = member;
+        currentRole = 'member';
+        isLoggedIn = true;
+        
+        member.lastLogin = new Date().toISOString();
+        member.loginCount = (member.loginCount || 0) + 1;
+        
+        // เพิ่มแต้ม login
+        if (memberPoints[member.id] !== undefined) {
+            memberPoints[member.id] += 5; // 5 แต้มต่อการล็อกอิน
+        }
+        
+        saveMembers();
+        
+        localStorage.setItem('sc13_session', JSON.stringify({
+            username: email,
+            memberId: member.id,
+            loginTime: new Date().toISOString(),
+            role: 'member'
+        }));
+        
+        document.getElementById('loginScreen').classList.remove('active');
+        document.getElementById('mainApp').style.display = 'block';
+        updateUserUI();
+        initApp();
+        
+        showToast('👋 ยินดีต้อนรับกลับ, ' + member.firstName + '! (แต้ม: ' + (memberPoints[member.id] || 0) + ')', 'success');
+    } else {
+        document.getElementById('loginError').textContent = '⚠️ อีเมลหรือรหัสผ่านไม่ถูกต้อง';
+        document.getElementById('loginError').classList.add('show');
+        setTimeout(() => document.getElementById('loginError').classList.remove('show'), 3000);
+    }
+}
+
+// เพิ่มรถในรายการโปรด (สำหรับสมาชิก)
+function toggleMemberFavorite(carId) {
+    if (!currentUser || currentRole !== 'member') {
+        showToast('กรุณาล็อกอินเป็นสมาชิกก่อน', 'warning');
+        return;
+    }
+    
+    if (!memberFavorites[currentUser.id]) memberFavorites[currentUser.id] = [];
+    
+    const idx = memberFavorites[currentUser.id].indexOf(carId);
+    if (idx > -1) {
+        memberFavorites[currentUser.id].splice(idx, 1);
+        showToast('💔 ลบออกจากรายการโปรด', 'warning');
+    } else {
+        memberFavorites[currentUser.id].push(carId);
+        memberPoints[currentUser.id] = (memberPoints[currentUser.id] || 0) + 10; // 10 แต้มต่อการบันทึก
+        showToast('❤️ เพิ่มในรายการโปรด (+10 แต้ม)', 'success');
+    }
+    saveMembers();
+    renderCustomerGrid();
+}
+
+// แสดงโปรไฟล์สมาชิก
+function openMemberProfile() {
+    if (!currentUser || currentRole !== 'member') return;
+    
+    const fav = (memberFavorites[currentUser.id] || []).length;
+    const points = memberPoints[currentUser.id] || 0;
+    const history = memberSearchHistory[currentUser.id] || [];
+    
+    let html = '<div class="modal-overlay open" onclick="if(event.target===this)this.remove()"><div class="modal modal-lg"><div class="modal-header"><div class="modal-title">👤 โปรไฟล์สมาชิก</div><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">&times;</button></div>';
+    
+    html += '<div style="text-align:center;padding:20px">';
+    html += '<div style="font-size:72px;margin-bottom:10px">' + (currentUser.avatar || '🙋') + '</div>';
+    html += '<div style="font-family:Kanit;font-size:24px;font-weight:700;color:var(--gold)">' + EH(currentUser.firstName + ' ' + (currentUser.lastName || '')) + '</div>';
+    html += '<div style="color:var(--text-secondary)">' + EH(currentUser.email) + '</div>';
+    html += '</div>';
+    
+    html += '<div class="dashboard-kpi-grid" style="margin-bottom:16px">';
+    html += '<div class="kpi-card"><div class="kpi-icon">⭐</div><div class="kpi-value" style="color:var(--gold)">' + points + '</div><div class="kpi-label">แต้มสะสม</div></div>';
+    html += '<div class="kpi-card"><div class="kpi-icon">❤️</div><div class="kpi-value" style="color:var(--red)">' + fav + '</div><div class="kpi-label">รถที่บันทึก</div></div>';
+    html += '<div class="kpi-card"><div class="kpi-icon">🔍</div><div class="kpi-value" style="color:var(--blue)">' + history.length + '</div><div class="kpi-label">การค้นหา</div></div>';
+    html += '<div class="kpi-card"><div class="kpi-icon">📅</div><div class="kpi-value" style="font-size:14px;color:var(--green)">' + new Date(currentUser.createdAt).toLocaleDateString('th-TH') + '</div><div class="kpi-label">สมาชิกตั้งแต่</div></div>';
+    html += '</div>';
+    
+    // รายการโปรด
+    if (fav > 0) {
+        html += '<h4 style="color:var(--gold);margin-bottom:10px">❤️ รถที่บันทึกไว้</h4>';
+        html += '<div style="display:flex;gap:8px;flex-wrap:wrap;max-height:200px;overflow-y:auto">';
+        memberFavorites[currentUser.id].forEach(carId => {
+            const c = cars.find(x => x.id === carId);
+            if (c) {
+                html += '<div style="background:var(--bg-input);border-radius:12px;padding:12px;cursor:pointer;min-width:200px" onclick="this.closest(\'.modal-overlay\').remove();APP.openCarDetailFull(' + c.id + ')">';
+                html += '<strong>' + EH(c.brand) + ' ' + EH(c.name) + '</strong><br>';
+                html += '<span style="color:var(--gold)">' + EH(c.net) + ' บาท</span>';
+                html += '</div>';
+            }
+        });
+        html += '</div>';
+    }
+    
+    html += '<button class="btn btn-danger btn-sm" onclick="APP.handleLogout()" style="width:100%;margin-top:16px">🚪 ออกจากระบบ</button>';
+    html += '</div></div>';
+    
+    document.getElementById('modalContainer').insertAdjacentHTML('beforeend', html);
+}
+
+// แสดงข้อตกลง
+function showTerms() {
+    const html = '<div class="modal-overlay open" onclick="if(event.target===this)this.remove()"><div class="modal"><div class="modal-header"><div class="modal-title">📋 ข้อตกลงและเงื่อนไข</div><button class="modal-close" onclick="this.closest(\'.modal-overlay\').remove()">&times;</button></div>' +
+        '<div style="max-height:400px;overflow-y:auto;line-height:1.8;font-size:12px">' +
+        '<h4>1. การยอมรับข้อตกลง</h4><p>การสมัครสมาชิกแสดงว่าคุณยอมรับข้อตกลงทั้งหมด</p>' +
+        '<h4>2. ความเป็นส่วนตัว</h4><p>ข้อมูลของคุณจะถูกเก็บเป็นความลับและไม่เปิดเผยแก่บุคคลภายนอก</p>' +
+        '<h4>3. แต้มสะสม</h4><p>แต้มสะสมสามารถใช้แลกส่วนลดหรือสิทธิพิเศษได้</p>' +
+        '<h4>4. การยกเลิกสมาชิก</h4><p>คุณสามารถยกเลิกสมาชิกได้ตลอดเวลา</p>' +
+        '</div><button class="btn btn-primary btn-sm" onclick="this.closest(\'.modal-overlay\').remove()" style="width:100%;margin-top:12px">รับทราบ</button></div></div>';
+    document.getElementById('modalContainer').insertAdjacentHTML('beforeend', html);
+}
+
+// ฟังก์ชันช่วย
+function showRegisterError(msg) {
+    const el = document.getElementById('registerError');
+    if (el) {
+        el.textContent = msg;
+        el.classList.add('show');
+        setTimeout(() => el.classList.remove('show'), 5000);
+    }
+}
+
+function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function isValidPhone(phone) {
+    return !phone || /^0[0-9]{8,9}$/.test(phone.replace(/[\s-]/g, ''));
+}
+
+// โหลด members ตอนเริ่ม
+loadMembers();
             // ========== PUBLIC API ==========
             return {
     selectRole, goBack, goToNext, handleLogin, togglePassword, toggleTheme,
@@ -6145,6 +6504,14 @@ exportCSV,                    // ✅ เพิ่มชื่อ
     chatbotAsk,         // ✅ เพิ่ม
     chatbotMinimize,    // ✅ เพิ่ม
     chatbotExpand,      // ✅ เพิ่ม
+    showRegisterScreen,
+    showLoginScreen,
+    toggleRegPassword,
+    handleRegister,
+    handleMemberLogin,
+    toggleMemberFavorite,
+    openMemberProfile,
+    showTerms,
     get cars() { return cars; }
 };
         })();
