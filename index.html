@@ -5850,35 +5850,168 @@ function renderDashboardCharts(allCars, soldInPeriod, showCars, salesPerformance
 function exportQuotationPDF() {
     const wrapper = document.querySelector('.quotation-wrapper');
     if (!wrapper) {
-        showToast('ไม่พบใบเสนอราคา', 'error');
+        showToast('❌ ไม่พบใบเสนอราคา', 'error');
         return;
     }
 
-    // ✅ แสดง loading
-    showToast('⏳ กำลังสร้าง PDF...', 'info', 'โปรดรอสักครู่', 2000);
+    showToast('⏳ กำลังสร้าง PDF...', 'info', 'โปรดรอสักครู่', 3000);
 
-    // ✅ โคลน element เพื่อปรับแต่งก่อนพิมพ์
-    const clone = wrapper.cloneNode(true);
-    clone.style.width = '210mm'; // A4 width
-    clone.style.padding = '10mm';
-    clone.style.background = '#ffffff';
-    clone.style.borderRadius = '0';
-    clone.style.boxShadow = 'none';
-    clone.style.margin = '0 auto';
+    // ✅ ตรวจสอบว่า html2pdf พร้อมใช้งาน
+    if (typeof html2pdf === 'undefined') {
+        showToast('❌ ไม่สามารถสร้าง PDF ได้', 'error');
+        return;
+    }
 
-    // ✅ ลบปุ่มที่ไม่ต้องการใน PDF
-    const buttons = clone.querySelectorAll('button');
-    buttons.forEach(btn => btn.remove());
-
-    // ✅ เพิ่ม footer
-    const footer = document.createElement('div');
-    footer.style.cssText = 'margin-top:20px;padding-top:15px;border-top:2px solid #e0e0e0;text-align:center;font-size:11px;color:#888;';
-    footer.innerHTML = `
-        <p>เอกสารนี้เป็นเพียงใบเสนอราคา ไม่ใช่ใบเสร็จรับเงิน</p>
-        <p>📞 ${SI.phone} | 💬 LINE: @${SI.lineId} | 📧 ${SI.email}</p>
-        <p>© ${new Date().getFullYear()} ${SI.name}</p>
+    // ✅ สร้าง container ใหม่สำหรับ PDF (ไม่ใช้ clone)
+    const pdfContainer = document.createElement('div');
+    pdfContainer.style.cssText = `
+        width: 210mm;
+        padding: 15mm;
+        background: #ffffff;
+        font-family: 'Sarabun', 'Kanit', sans-serif;
+        color: #333333;
+        position: fixed;
+        left: -9999px;
+        top: 0;
+        z-index: -1;
     `;
-    clone.appendChild(footer);
+
+    // ✅ ดึงข้อมูลจากใบเสนอราคา
+    const carName = wrapper.querySelector('.quotation-car-info div')?.textContent?.trim() || '';
+    const carPrice = wrapper.querySelector('.quotation-car-price-big')?.textContent?.trim() || '';
+    const monthlyDisplay = document.getElementById('pqMonthlyDisplay')?.textContent?.trim() || '';
+    const monthlySubtitle = document.getElementById('pqMonthlySubtitle')?.textContent?.trim() || '';
+    
+    // ✅ ดึงผลลัพธ์การคำนวณ
+    let resultHTML = '';
+    const resultGrid = document.getElementById('pqResultGrid');
+    if (resultGrid) {
+        resultHTML = resultGrid.innerHTML;
+    }
+
+    // ✅ สร้าง HTML สำหรับ PDF
+    pdfContainer.innerHTML = `
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: 'Sarabun', sans-serif; color: #333; }
+            .pdf-header { 
+                background: #1a1a2e; 
+                color: #fff; 
+                padding: 25px; 
+                border-radius: 10px;
+                margin-bottom: 20px;
+            }
+            .pdf-header h2 { 
+                font-family: 'Kanit', sans-serif; 
+                font-size: 22px; 
+                color: #f0d080; 
+                margin-bottom: 5px;
+            }
+            .pdf-header .phone { font-size: 13px; color: #f0d080; }
+            .pdf-header .date { text-align: right; font-size: 11px; }
+            .pdf-header .quotation-badge {
+                display: inline-block;
+                background: #c9a84c;
+                color: #1a1a2e;
+                padding: 6px 20px;
+                border-radius: 20px;
+                font-weight: 700;
+                font-size: 13px;
+                margin-top: 10px;
+            }
+            .car-info {
+                background: #fef9e7;
+                border: 2px solid #c9a84c;
+                border-radius: 12px;
+                padding: 20px;
+                margin-bottom: 20px;
+            }
+            .car-info h3 { font-family: 'Kanit', sans-serif; font-size: 18px; color: #1a1a2e; margin-bottom: 8px; }
+            .car-info .price { font-family: 'Kanit', sans-serif; font-size: 32px; font-weight: 700; color: #c9a84c; }
+            .result-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+                margin-bottom: 20px;
+            }
+            .result-item {
+                background: #fff;
+                border: 1px solid #e0e0e0;
+                border-radius: 10px;
+                padding: 14px;
+                text-align: center;
+            }
+            .result-item .label { font-size: 9px; color: #888; text-transform: uppercase; }
+            .result-item .value { font-family: 'Kanit', sans-serif; font-size: 18px; font-weight: 700; color: #333; }
+            .result-item.highlight {
+                background: #fef9e7;
+                border: 2px solid #c9a84c;
+            }
+            .result-item.highlight .value { color: #c9a84c; font-size: 20px; }
+            .monthly-box {
+                background: #1a1a2e;
+                color: #fff;
+                border-radius: 12px;
+                padding: 25px;
+                text-align: center;
+                margin-bottom: 20px;
+            }
+            .monthly-box .label { font-size: 10px; color: #f0d080; letter-spacing: 2px; text-transform: uppercase; }
+            .monthly-box .amount { font-family: 'Kanit', sans-serif; font-size: 40px; font-weight: 700; color: #f0d080; }
+            .monthly-box .subtitle { font-size: 10px; color: rgba(240,208,128,0.7); margin-top: 5px; }
+            .footer {
+                margin-top: 20px;
+                padding-top: 15px;
+                border-top: 2px solid #e0e0e0;
+                text-align: center;
+                font-size: 10px;
+                color: #888;
+                line-height: 1.6;
+            }
+        </style>
+        
+        <div class="pdf-header">
+            <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                    <td>
+                        <h2>🚗 ${EH(SI.name)}</h2>
+                        <div class="phone">📞 ${SI.phone}</div>
+                    </td>
+                    <td align="right" valign="top">
+                        <div class="date">${new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                        <div class="quotation-badge">📋 ใบเสนอราคา</div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        
+        <div class="car-info">
+            <h3>${EH(carName)}</h3>
+            <div class="price">${EH(carPrice)} <span style="font-size:18px">บาท</span></div>
+            <div style="font-size:11px;color:#888;margin-top:5px">ราคานี้ยังไม่รวมค่าจดทะเบียนและค่าประกันภัย</div>
+        </div>
+        
+        <h4 style="font-family:Kanit;font-size:14px;color:#1a1a2e;margin-bottom:10px">📊 สรุปการคำนวณ</h4>
+        <div class="result-grid">
+            ${resultHTML ? resultHTML.replace(/style="[^"]*"/g, '').replace(/background:linear-gradient[^;"]*;?/g, 'background:#fef9e7;').replace(/border:2px solid #c9a84c/g, 'border:2px solid #c9a84c') : '<div class="result-item"><div class="label">ไม่มีข้อมูล</div></div>'}
+        </div>
+        
+        <div class="monthly-box">
+            <div class="label">💎 ค่าผ่อนต่อเดือน</div>
+            <div class="amount">${EH(monthlyDisplay.replace('บาท', '').trim()) || '—'}</div>
+            <div style="font-size:16px">บาท</div>
+            <div class="subtitle">${EH(monthlySubtitle) || ''}</div>
+        </div>
+        
+        <div class="footer">
+            <p>เอกสารนี้เป็นเพียงใบเสนอราคา ไม่ใช่ใบเสร็จรับเงิน</p>
+            <p>📞 ${SI.phone} | 💬 LINE: @${SI.lineId} | 📧 ${SI.email}</p>
+            <p>© ${new Date().getFullYear()} ${SI.name}</p>
+        </div>
+    `;
+
+    // ✅ เพิ่ม container ใน DOM ชั่วคราว
+    document.body.appendChild(pdfContainer);
 
     // ✅ ตั้งค่า html2pdf
     const opt = {
@@ -5889,23 +6022,31 @@ function exportQuotationPDF() {
             scale: 2,
             useCORS: true,
             letterRendering: true,
-            logging: false
+            logging: false,
+            backgroundColor: '#ffffff'
         },
         jsPDF: { 
             unit: 'mm', 
             format: 'a4', 
             orientation: 'portrait' 
-        },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        }
     };
 
     // ✅ สร้าง PDF
-    html2pdf().set(opt).from(clone).save().then(() => {
-        showToast('📄 สร้าง PDF สำเร็จ!', 'success');
-    }).catch(err => {
-        console.error('PDF Error:', err);
-        showToast('ไม่สามารถสร้าง PDF ได้', 'error');
-    });
+    html2pdf().set(opt).from(pdfContainer).save()
+        .then(() => {
+            showToast('📄 สร้าง PDF สำเร็จ!', 'success');
+        })
+        .catch(err => {
+            console.error('PDF Error:', err);
+            showToast('❌ ไม่สามารถสร้าง PDF ได้', 'error');
+        })
+        .finally(() => {
+            // ✅ ลบ container ชั่วคราว
+            if (pdfContainer.parentElement) {
+                pdfContainer.remove();
+            }
+        });
 }
           // ✅ เพิ่มตรงนี้ ก่อน return
 function shareToFacebook(carId) {
