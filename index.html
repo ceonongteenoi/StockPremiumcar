@@ -5848,85 +5848,233 @@ function renderDashboardCharts(allCars, soldInPeriod, showCars, salesPerformance
             });
           // ========== EXPORT PDF ==========
 function exportQuotationPDF() {
-    // 1. แสดง Toast แจ้งเตือนผู้ใช้
-    showToast('⏳ กำลังสร้าง PDF...', 'info', 'โปรดรอสักครู่', 2000);
+    // แสดง Toast แจ้งเตือน
+    showToast('⏳ กำลังสร้าง PDF ขนาด A4...', 'info', 'โปรดรอสักครู่', 3000);
 
-    // 2. อ่านข้อมูลล่าสุดจากหน้าจอ modal
+    // ✅ อ่านข้อมูลล่าสุดจาก Modal
     const carNameEl = document.querySelector('.quotation-car-info div[style*="font-family:Kanit"]');
     const carName = carNameEl ? carNameEl.innerText.trim() : 'รถยนต์';
     const carPrice = (document.querySelector('.quotation-car-price-big')?.innerText || '0').replace('บาท', '').trim();
     const monthlyText = document.getElementById('pqMonthlyDisplay')?.innerText || '0 บาท';
     const monthlyAmount = monthlyText.replace('บาท', '').trim();
     const subtitleText = document.getElementById('pqMonthlySubtitle')?.innerText || '';
+    const dateText = document.querySelector('.quotation-header div[style*="text-align:right"] div:first-child')?.innerText || 
+                     new Date().toLocaleDateString('th-TH', { year:'numeric', month:'long', day:'numeric' });
 
-    // 3. คัดลอกตารางสรุปผล ถ้ามี
+    // ✅ คัดลอกตารางสรุปผล
     let resultGridHTML = '';
     const resultGrid = document.getElementById('pqResultGrid');
     if (resultGrid) {
         resultGridHTML = resultGrid.innerHTML
             .replace(/style="[^"]*"/g, '')
-            .replace(/background:linear-gradient[^;"]*;?/g, 'background:#f0f7ff;');
+            .replace(/background:linear-gradient\([^)]*\);?/g, 'background:#f0f7ff;');
     }
 
-    // 4. สร้าง HTML ใน Container ที่ซ่อนอยู่
-    const container = document.getElementById('pdfExportContainer');
-    if (!container) return;
+    // ✅ หา container หรือสร้างใหม่
+    let container = document.getElementById('pdfExportContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'pdfExportContainer';
+        container.style.cssText = 'position:fixed;left:-9999px;top:0;z-index:-1;width:794px;background:#fff;';
+        document.body.appendChild(container);
+    }
 
+    // ✅ สร้าง HTML สำหรับ PDF ขนาด A4 (794px = 210mm ที่ 96dpi)
     container.innerHTML = `
-        <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { font-family: 'Sarabun', sans-serif; color: #333; background: #fff; }
-            .header { background: #1a1a2e; color: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-            .header h2 { font-family: 'Kanit', sans-serif; color: #f0d080; font-size: 22px; }
-            .car-info { background: #fef9e7; border: 2px solid #c9a84c; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
-            .big-price { font-family: 'Kanit', sans-serif; font-size: 36px; font-weight: 700; color: #c9a84c; }
-            .result-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-            .result-item { background: #f8f9fa; border: 1px solid #eee; border-radius: 8px; padding: 12px; text-align: center; }
-            .result-item .label { font-size: 9px; color: #888; }
-            .result-item .value { font-family: 'Kanit', sans-serif; font-size: 16px; font-weight: 700; }
-            .monthly-box { background: #1a1a2e; color: #fff; border-radius: 8px; padding: 25px; text-align: center; margin-bottom: 20px; }
-            .monthly-amount { font-family: 'Kanit', sans-serif; font-size: 44px; font-weight: 700; color: #f0d080; }
-            .footer { margin-top: 30px; padding-top: 15px; border-top: 2px solid #eee; text-align: center; font-size: 10px; color: #888; }
-        </style>
-        <div class="header">
-            <h2>🚗 ${EH(SI.name)}</h2>
-            <p>📞 ${SI.phone} &nbsp;|&nbsp; 💬 LINE: @${SI.lineId}</p>
-            <p style="font-size:12px; margin-top:5px;">วันที่ ${new Date().toLocaleDateString('th-TH', { year:'numeric', month:'long', day:'numeric' })} | 📋 <strong>ใบเสนอราคา</strong></p>
-        </div>
-        <div class="car-info">
-            <h3 style="font-size:18px;">${EH(carName)}</h3>
-            <div class="big-price">${EH(carPrice)} <span style="font-size:24px">บาท</span></div>
-        </div>
-        <div class="result-grid">
-            ${resultGridHTML || '<div class="result-item"><div class="label">ไม่พบข้อมูล</div></div>'}
-        </div>
-        <div class="monthly-box">
-            <p style="font-size:11px; color:#f0d080;">💎 ค่าผ่อนต่อเดือน</p>
-            <div class="monthly-amount">${EH(monthlyAmount)} <span style="font-size:24px">บาท</span></div>
-            <p style="font-size:11px; color:rgba(240,208,128,0.7); margin-top:5px;">${subtitleText}</p>
-        </div>
-        <div class="footer">
-            <p>เอกสารนี้เป็นเพียงใบเสนอราคา ไม่ใช่ใบเสร็จรับเงิน</p>
-            <p>📞 ${SI.phone} | 💬 LINE: @${SI.lineId} | 📧 ${SI.email}</p>
-            <p>© ${new Date().getFullYear()} ${SI.name}</p>
-        </div>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Kanit:wght@400;500;600;700&display=swap" rel="stylesheet">
+            <style>
+                * { margin: 0; padding: 0; box-sizing: border-box; }
+                body { 
+                    width: 794px; 
+                    min-height: 1123px;
+                    font-family: 'Sarabun', sans-serif; 
+                    color: #333333; 
+                    background: #ffffff; 
+                    padding: 56px 48px;
+                    margin: 0;
+                }
+                .pdf-header { 
+                    background: #1a1a2e; 
+                    color: #ffffff; 
+                    padding: 30px; 
+                    border-radius: 12px; 
+                    margin-bottom: 28px; 
+                }
+                .pdf-header h2 { 
+                    font-family: 'Kanit', sans-serif; 
+                    color: #f0d080; 
+                    font-size: 28px; 
+                    margin-bottom: 5px;
+                }
+                .pdf-header .badge {
+                    display: inline-block;
+                    background: #c9a84c;
+                    color: #1a1a2e;
+                    padding: 8px 24px;
+                    border-radius: 25px;
+                    font-weight: 700;
+                    font-size: 15px;
+                    margin-top: 14px;
+                }
+                .car-info { 
+                    background: #fef9e7; 
+                    border: 2px solid #c9a84c; 
+                    border-radius: 12px; 
+                    padding: 25px; 
+                    margin-bottom: 28px; 
+                }
+                .car-info h3 { 
+                    font-family: 'Kanit', sans-serif; 
+                    font-size: 22px; 
+                    color: #1a1a2e; 
+                    margin-bottom: 12px;
+                }
+                .big-price { 
+                    font-family: 'Kanit', sans-serif; 
+                    font-size: 42px; 
+                    font-weight: 700; 
+                    color: #c9a84c; 
+                }
+                .section-title {
+                    font-family: 'Kanit', sans-serif;
+                    font-size: 18px;
+                    color: #1a1a2e;
+                    margin-bottom: 14px;
+                    margin-top: 28px;
+                }
+                .result-grid { 
+                    display: grid; 
+                    grid-template-columns: repeat(5, 1fr); 
+                    gap: 10px; 
+                    margin-bottom: 28px; 
+                }
+                .result-item { 
+                    background: #f8f9fa; 
+                    border: 1px solid #e0e0e0; 
+                    border-radius: 10px; 
+                    padding: 14px 10px; 
+                    text-align: center; 
+                }
+                .result-item .label { font-size: 10px; color: #888; margin-bottom: 4px; }
+                .result-item .value { font-family: 'Kanit', sans-serif; font-size: 18px; font-weight: 700; }
+                .monthly-box { 
+                    background: #1a1a2e; 
+                    color: #ffffff; 
+                    border-radius: 12px; 
+                    padding: 32px; 
+                    text-align: center; 
+                    margin-bottom: 28px; 
+                }
+                .monthly-box .label { 
+                    font-size: 13px; 
+                    color: #f0d080; 
+                    letter-spacing: 2px; 
+                    margin-bottom: 10px;
+                }
+                .monthly-amount { 
+                    font-family: 'Kanit', sans-serif; 
+                    font-size: 52px; 
+                    font-weight: 700; 
+                    color: #f0d080; 
+                }
+                .monthly-box .subtitle { 
+                    font-size: 12px; 
+                    color: rgba(240,208,128,0.7); 
+                    margin-top: 8px; 
+                }
+                .footer { 
+                    margin-top: 30px; 
+                    padding-top: 20px; 
+                    border-top: 2px solid #e0e0e0; 
+                    text-align: center; 
+                    font-size: 11px; 
+                    color: #888; 
+                    line-height: 1.8;
+                }
+            </style>
+        </head>
+        <body>
+            <!-- Header -->
+            <div class="pdf-header">
+                <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td>
+                            <h2>🚗 ${EH(SI.name)}</h2>
+                            <p style="font-size:14px;color:#ddd;margin-top:4px;">📞 ${SI.phone} &nbsp;|&nbsp; 💬 LINE: @${SI.lineId}</p>
+                        </td>
+                        <td align="right" valign="top">
+                            <p style="font-size:12px;color:#ddd;">${dateText}</p>
+                        </td>
+                    </tr>
+                </table>
+                <div class="badge">📋 ใบเสนอราคา</div>
+            </div>
+
+            <!-- ข้อมูลรถ -->
+            <div class="car-info">
+                <h3>${EH(carName)}</h3>
+                <div class="big-price">${EH(carPrice)} <span style="font-size:20px;font-weight:400;">บาท</span></div>
+                <p style="font-size:11px;color:#888;margin-top:8px;">* ราคานี้ยังไม่รวมค่าจดทะเบียนและค่าประกันภัย</p>
+            </div>
+
+            <!-- สรุปการคำนวณ -->
+            <div class="section-title">📊 สรุปการคำนวณ</div>
+            <div class="result-grid">
+                ${resultGridHTML || '<div class="result-item"><span class="label">ไม่พบข้อมูล</span></div>'}
+            </div>
+
+            <!-- ค่าผ่อนต่อเดือน -->
+            <div class="monthly-box">
+                <p class="label">💎 ค่าผ่อนต่อเดือน</p>
+                <p class="monthly-amount">${EH(monthlyAmount)} <span style="font-size:24px;">บาท</span></p>
+                <p class="subtitle">${EH(subtitleText)}</p>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+                <p>เอกสารนี้เป็นเพียง<b>ใบเสนอราคา</b> ไม่ใช่ใบเสร็จรับเงิน</p>
+                <p>📞 ${SI.phone} &nbsp;|&nbsp; 💬 LINE: @${SI.lineId} &nbsp;|&nbsp; 📧 ${SI.email}</p>
+                <p>© ${new Date().getFullYear()} ${SI.name} | สงวนลิขสิทธิ์</p>
+            </div>
+        </body>
+        </html>
     `;
 
-    // 5. สั่ง html2pdf ให้จับภาพจาก Container
+    // ✅ ตั้งค่า html2pdf สำหรับ A4
     const opt = {
-        margin: 0,
+        margin: [0, 0, 0, 0],
         filename: `Quotation_${SI.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true, logging: false, backgroundColor: '#ffffff' },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        html2canvas: { 
+            scale: 2,
+            useCORS: true, 
+            letterRendering: true, 
+            logging: false, 
+            backgroundColor: '#ffffff',
+            width: 794,
+            height: 1123
+        },
+        jsPDF: { 
+            unit: 'mm', 
+            format: 'a4',
+            orientation: 'portrait' 
+        },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
     };
 
-    html2pdf().set(opt).from(container).save().then(() => {
-        showToast('📄 สร้าง PDF สำเร็จ!', 'success');
-    }).catch(err => {
-        console.error(err);
-        showToast('❌ ไม่สามารถสร้าง PDF ได้', 'error');
-    });
+    // ✅ สร้าง PDF
+    html2pdf().set(opt).from(container).save()
+        .then(() => {
+            showToast('📄 สร้าง PDF ขนาด A4 สำเร็จ!', 'success');
+        })
+        .catch(err => {
+            console.error('PDF Error:', err);
+            showToast('❌ ไม่สามารถสร้าง PDF ได้', 'error');
+        });
 }
           // ✅ เพิ่มตรงนี้ ก่อน return
 function shareToFacebook(carId) {
